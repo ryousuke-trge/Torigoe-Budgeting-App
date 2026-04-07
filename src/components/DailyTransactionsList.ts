@@ -9,8 +9,8 @@ export function renderDailyTransactionsList(
   const [y, m, d] = dateStr.split('-');
   const displayDate = `${y}年${Number(m)}月${Number(d)}日`;
 
-  const totalIncome = transactions.filter(t => t.categories.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.categories.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = transactions.filter(t => t.categories?.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.categories?.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
   const isPlus = balance >= 0;
 
@@ -36,15 +36,15 @@ export function renderDailyTransactionsList(
   } else {
     html += `<ul class="space-y-3">`;
     for (const tx of transactions) {
-      const isIncome = tx.categories.type === 'income';
+      const isIncome = tx.categories?.type === 'income';
       html += `
         <li class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
           <div class="flex items-center gap-3 overflow-hidden">
             <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-white shadow-sm border border-gray-100">
-              ${tx.categories.icon}
+              ${tx.categories?.icon || '🏷️'}
             </div>
             <div class="truncate">
-              <div class="font-bold text-gray-800 text-sm">${tx.categories.name}</div>
+              <div class="font-bold text-gray-800 text-sm">${tx.categories?.name || '不明なカテゴリ'}</div>
               ${tx.memo ? `<div class="text-xs text-gray-500 truncate">${tx.memo}</div>` : ''}
             </div>
           </div>

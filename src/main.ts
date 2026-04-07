@@ -35,14 +35,14 @@ function handleRoute() {
 }
 
 async function init() {
-  // DBの初期カテゴリ投入
-  await initCategoriesIfEmpty();
-
-  // ルーティングの初期化
+  // ルーティングの初期化と初回のUI描画を先に行い、白い画面でフリーズするのを防ぐ
   window.addEventListener('hashchange', handleRoute);
   
-  // 初期ロード時のルート解決
+  // 初期ロード時のルート解決 (これによりLoading表示が即座に出る)
   handleRoute();
+
+  // その後バックグラウンドでDBの初期カテゴリ投入
+  await initCategoriesIfEmpty();
 }
 
 init();
