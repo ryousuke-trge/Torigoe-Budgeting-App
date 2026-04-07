@@ -3,7 +3,8 @@ import { formatDate } from '../utils/date';
 
 export function createTransactionModal(
   categories: Category[],
-  onSubmit: (data: { date: string; amount: number; category_id: string; memo: string }) => Promise<void>
+  onSubmit: (data: { date: string; amount: number; category_id: string; memo: string }) => Promise<void>,
+  initialDate?: string
 ) {
   // すでにモーダルがあれば削除
   const existingModal = document.getElementById('transaction-modal');
@@ -40,7 +41,7 @@ export function createTransactionModal(
           <!-- 日付 -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">日付</label>
-            <input type="date" id="tx-date" name="date" required value="${formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" id="tx-date" name="date" required value="${initialDate || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <!-- 金額 -->

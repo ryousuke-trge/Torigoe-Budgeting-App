@@ -1,17 +1,24 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>シンプル家計簿</title>
-  </head>
-  <body class="bg-gray-50 text-gray-800 antialiased h-dvh w-full overflow-hidden flex flex-col overscroll-none">
-    <div id="app" class="flex flex-col h-full w-full max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
-      <main id="page-content" class="flex-1 overflow-y-auto min-h-0">
-        <div class="flex items-center justify-center h-full"><div class="text-gray-400">アプリを起動中...</div></div>
-      </main>
-      <nav id="bottom-nav" class="w-full bg-white border-t border-gray-100 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] flex-shrink-0"></nav>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鳥越家計簿</title>
+</head>
+
+<body class="bg-gray-50 text-gray-800 antialiased h-dvh w-full overflow-hidden flex flex-col overscroll-none">
+  <div id="app" class="flex flex-col h-full w-full max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
+    <main id="page-content" class="flex-1 overflow-y-auto min-h-0">
+      <div class="flex items-center justify-center h-full">
+        <div class="text-gray-400">アプリを起動中...</div>
+      </div>
+    </main>
+    <nav id="bottom-nav"
+      class="w-full bg-white border-t border-gray-100 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] flex-shrink-0">
+    </nav>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>

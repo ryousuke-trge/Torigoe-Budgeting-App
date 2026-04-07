@@ -102,9 +102,11 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
       <div id="daily-transactions-container"></div>
       
       <!-- フローティングアクションボタン (FAB) -->
-      <button id="btn-add-tx" class="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 transform transition-all flex items-center justify-center focus:outline-none z-10">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-      </button>
+      <div class="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] w-full max-w-md left-1/2 -translate-x-1/2 pointer-events-none flex justify-end px-4 sm:px-6 z-10">
+        <button id="btn-add-tx" class="pointer-events-auto w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 transform transition-all flex items-center justify-center focus:outline-none shrink-0">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+        </button>
+      </div>
     </div>
   `;
 
@@ -168,6 +170,6 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
       });
       // 保存成功後、再描画
       await updateHomeView(container);
-    });
+    }, selectedDateStr);
   });
 }
