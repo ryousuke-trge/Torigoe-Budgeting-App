@@ -5,7 +5,7 @@ import { renderStats } from './pages/stats';
 import { renderSettings } from './pages/settings';
 import { renderBottomNav } from './components/BottomNav';
 
-// DOM要素
+// DOM elements
 const pageContent = document.getElementById('page-content');
 const bottomNav = document.getElementById('bottom-nav');
 
@@ -14,10 +14,10 @@ function handleRoute() {
 
   const hash = window.location.hash;
 
-  // ナビゲーションの再描画
+  // Re-render navigation
   renderBottomNav(bottomNav, hash);
 
-  // コンテンツの再描画
+  // Re-render content
   pageContent.innerHTML = '';
   switch (hash) {
     case '#/stats':
@@ -35,13 +35,13 @@ function handleRoute() {
 }
 
 async function init() {
-  // ルーティングの初期化と初回のUI描画を先に行い、白い画面でフリーズするのを防ぐ
+  // Initialize routing and render initial UI first to prevent white screen freeze
   window.addEventListener('hashchange', handleRoute);
   
-  // 初期ロード時のルート解決 (これによりLoading表示が即座に出る)
+  // Route resolution on initial load (This shows the loading indicator immediately)
   handleRoute();
 
-  // その後バックグラウンドでDBの初期カテゴリ投入
+  // Then initialize categories in the database in the background
   await initCategoriesIfEmpty();
 }
 

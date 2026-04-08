@@ -7,14 +7,14 @@ let currentMonth = new Date().getMonth(); // 0-11
 let searchQuery = '';
 
 export async function renderStats(container: HTMLElement) {
-  // キャッシュから一瞬で描画を試みる
+  // Try to render instantly from cache
   try {
     await updateStatsView(container, true);
   } catch (e) {
     container.innerHTML = `<div class="flex items-center justify-center h-full"><div class="text-gray-400">読み込み中...</div></div>`;
   }
 
-  // 裏で最新データを取得し再描画
+  // Fetch latest data in background and re-render
   try {
     await updateStatsView(container, false);
   } catch (error) {
@@ -24,11 +24,11 @@ export async function renderStats(container: HTMLElement) {
 }
 
 async function updateStatsView(container: HTMLElement, useCache: boolean = false) {
-  // 今月
+  // This month
   const startDate = new Date(currentYear, currentMonth, 1);
   const endDate = new Date(currentYear, currentMonth + 1, 0);
 
-  // 先月
+  // Last month
   let prevMonth = currentMonth - 1;
   let prevYear = currentYear;
   if (prevMonth < 0) {
@@ -38,12 +38,12 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   const prevStartDate = new Date(prevYear, prevMonth, 1);
   const prevEndDate = new Date(prevYear, prevMonth + 1, 0);
 
-  // データ取得
+  // Fetch data
   let currentTxs, prevTxs;
   if (useCache) {
     currentTxs = api.getCachedTransactions(formatDate(startDate), formatDate(endDate));
     prevTxs = api.getCachedTransactions(formatDate(prevStartDate), formatDate(prevEndDate));
-    // もしキャッシュが全く無さそうならエラーを投げて「読み込み中...」を出させる
+    // Throw error if no cache exists to show "Loading..."
     if (currentTxs.length === 0 && prevTxs.length === 0 && !localStorage.getItem('cache_transactions')) {
       throw new Error('No cache');
     }
@@ -54,7 +54,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
     ]);
   }
 
-  // 集計関数
+  // Aggregation function
   const aggregate = (txs: TransactionWithCategory[]) => {
     let income = 0;
     let expense = 0;
@@ -67,7 +67,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
       if (t === 'income') income += tx.amount;
       else expense += tx.amount;
 
-      // 検索クエリ適用
+      // Apply search query
       if (searchQuery && !tx.categories.name.includes(searchQuery)) continue;
 
       if (!catMap[tx.category_id]) {
@@ -82,12 +82,12 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   const curr = aggregate(currentTxs);
   const prev = aggregate(prevTxs);
 
-  // 先月比
+  // Month-over-month difference
   const diffIncome = curr.income - prev.income;
   const diffExpense = curr.expense - prev.expense;
   const formatDiff = (d: number) => d > 0 ? `+${d.toLocaleString()}` : d.toLocaleString();
 
-  // ランキング配列化
+  // Convert to array for ranking
   const items = Object.values(curr.catMap).sort((a, b) => b.amount - a.amount);
   const expenseItems = items.filter(i => i.type === 'expense');
   const incomeItems = items.filter(i => i.type === 'income');
@@ -104,7 +104,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
         </button>
       </div>
 
-      <!-- 検索バー -->
+      <!-- Search bar -->
       <div class="mb-4">
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -114,7 +114,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
         </div>
       </div>
 
-      <!-- 先月比サマリー -->
+      <!-- Month-over-month summary -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6 flex justify-between items-center">
         <div class="flex-1">
           <div class="text-xs text-gray-400 mb-1">今月支出</div>
@@ -129,7 +129,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
         </div>
       </div>
 
-      <!-- ランキング -->
+      <!-- Ranking -->
       <div class="flex-1 overflow-y-auto pr-1">
         <h2 class="text-sm font-bold text-gray-600 mb-3 ml-1">支出ランキング</h2>
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -164,7 +164,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
 
   container.innerHTML = html;
 
-  // イベントリスナー
+  // Event listeners
   document.getElementById('st-prev-month')?.addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) {
@@ -187,7 +187,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   searchInput?.addEventListener('input', (e) => {
     searchQuery = (e.target as HTMLInputElement).value;
     updateStatsView(container);
-    // フォーカスを戻すハック（簡易）
+    // Quick hack to restore focus
     setTimeout(() => {
       const el = document.getElementById('search-input') as HTMLInputElement;
       if (el) {

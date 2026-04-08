@@ -8,7 +8,7 @@ interface DaySummary {
 export function renderCalendar(
   container: HTMLElement,
   year: number,
-  month: number, // 0から始まる月インデックス (0 = 1月)
+  month: number, // 0-indexed month (0 = Jan)
   summaryByDate: Record<string, DaySummary>,
   selectedDateStr: string | null = null
 ) {
@@ -17,7 +17,7 @@ export function renderCalendar(
 
   let html = `<div class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden mt-4">`;
   
-  // 曜日のヘッダー
+  // Days of week header
   for (const day of daysOfWeek) {
     const isSun = day === '日';
     const isSat = day === '土';
@@ -28,7 +28,7 @@ export function renderCalendar(
     html += `<div class="bg-gray-50 py-2 text-center text-xs font-medium ${textColorClass}">${day}</div>`;
   }
 
-  // 日付のマス
+  // Date cells
   for (const dateObj of grid) {
     const dateStr = formatDate(dateObj);
     const summary = summaryByDate[dateStr] || { income: 0, expense: 0 };

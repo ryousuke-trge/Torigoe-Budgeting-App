@@ -3,7 +3,23 @@ import Sortable from 'sortablejs';
 
 const COMMON_EMOJIS = ['💰', '🍔', '🚃', '🏥', '🏠', '💡', '📱', '🎮', '👕', '✂️', '🎁', '🎓', '🏛️', '🍻', '💳', '📦'];
 
-// グローバルな絵文字ピッカーの初期化
+const FREQUENCY_LABELS: Record<string, string> = {
+  daily: '毎日',
+  weekdays: '平日',
+  weekends: '週末',
+  weekly: '毎週',
+  biweekly: '2週間ごと',
+  every_4_weeks: '4週間ごと',
+  monthly: '毎月',
+  every_2_months: '2ヶ月ごと',
+  quarterly: '3ヶ月ごと',
+  every_4_months: '4ヶ月ごと',
+  every_5_months: '5ヶ月ごと',
+  half_yearly: '半年ごと',
+  yearly: '毎年ごと'
+};
+
+// Initialize global emoji picker
 let pickerEl: HTMLElement | null = null;
 let activeEmojiInput: HTMLInputElement | null = null;
 
@@ -43,7 +59,7 @@ function showEmojiPicker(input: HTMLInputElement) {
   
   const rect = input.getBoundingClientRect();
   
-  // 画面外にはみ出さないよう調整
+  // Adjust to stay within screen bounds
   let top = rect.bottom + window.scrollY + 4;
   let left = rect.left + window.scrollX;
   
@@ -106,7 +122,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     <div class="h-full flex flex-col pt-8 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] overflow-y-auto">
       <h1 class="text-2xl font-bold text-gray-800 mb-6">設定</h1>
 
-      <!-- 繰り返し予定設定 -->
+      <!-- Recurring tasks settings -->
       <section class="mb-8">
         <h2 class="text-lg font-bold text-gray-700 mb-3">繰り返し予定</h2>
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-4 p-4">
@@ -116,11 +132,13 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
                <input type="number" name="amount" placeholder="金額" required min="1" class="w-24 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div class="flex gap-2">
-               <select name="day_of_month" required class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
-                 <option value="" disabled selected>発生日</option>
-                 ${Array.from({length:31}, (_,i) => `<option value="${i+1}">毎月${i+1}日</option>`).join('')}
-                 <option value="31">月末 (31日扱い)</option>
+               <input type="date" name="start_date" required class="w-32 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+               <select name="frequency" required class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+                 <option value="" disabled selected>繰り返し頻度</option>
+                 ${Object.entries(FREQUENCY_LABELS).map(([val, label]) => `<option value="${val}">${label}</option>`).join('')}
                </select>
+            </div>
+            <div class="flex gap-2">
                <select name="category_id" required class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
                  <option value="" disabled selected>カテゴリ</option>
                  <optgroup label="支出">
@@ -141,7 +159,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
               <div>
                 <div class="text-sm font-bold text-gray-800">${r.title}</div>
                 <div class="text-xs text-gray-500">
-                  毎月${r.day_of_month === 31 ? '末' : r.day_of_month + '日'} / ${r.categories?.icon} ${r.categories?.name} / ¥${r.amount.toLocaleString()}
+                  ${r.start_date} から開始 / ${FREQUENCY_LABELS[r.frequency] || r.frequency} / ${r.categories?.icon} ${r.categories?.name} / ¥${r.amount.toLocaleString()}
                 </div>
               </div>
               <button class="btn-delete-recurring p-2 text-gray-400 hover:text-red-500 transition-colors" data-id="${r.id}">
@@ -152,7 +170,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
         </div>
       </section>
 
-      <!-- カテゴリ設定 -->
+      <!-- Category settings -->
       <section class="mb-8">
         <h2 class="text-lg font-bold text-gray-700 mb-3">カテゴリ管理</h2>
         
@@ -172,7 +190,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
         <div id="expense-categories-list" class="flex flex-col gap-2 mb-6">
           ${expenseCategories.map(c => `
             <div class="category-item bg-white border border-gray-100 p-2 rounded-xl flex flex-col shadow-sm" data-id="${c.id}">
-              <!-- 表示モード -->
+              <!-- View mode -->
               <div class="category-view flex items-center justify-between">
                 <div class="flex items-center gap-2 overflow-hidden">
                   <div class="drag-handle cursor-grab text-gray-300 hover:text-gray-500 mr-1 p-1" title="並べ替え">
@@ -191,7 +209,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
                 </div>
               </div>
               
-              <!-- 編集モード -->
+              <!-- Edit mode -->
               <form class="category-edit-form hidden flex items-center gap-2 mt-2 pt-2 border-t border-gray-50" data-id="${c.id}">
                 <select name="type" required class="bg-gray-50 border border-gray-200 rounded-md px-1 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
                   <option value="expense" ${c.type === 'expense' ? 'selected' : ''}>支出</option>
@@ -210,7 +228,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
         <div id="income-categories-list" class="flex flex-col gap-2">
           ${incomeCategories.map(c => `
             <div class="category-item bg-white border border-gray-100 p-2 rounded-xl flex flex-col shadow-sm" data-id="${c.id}">
-              <!-- 表示モード -->
+              <!-- View mode -->
               <div class="category-view flex items-center justify-between">
                 <div class="flex items-center gap-2 overflow-hidden">
                   <div class="drag-handle cursor-grab text-gray-300 hover:text-gray-500 mr-1 p-1" title="並べ替え">
@@ -229,7 +247,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
                 </div>
               </div>
               
-              <!-- 編集モード -->
+              <!-- Edit mode -->
               <form class="category-edit-form hidden flex items-center gap-2 mt-2 pt-2 border-t border-gray-50" data-id="${c.id}">
                 <select name="type" required class="bg-gray-50 border border-gray-200 rounded-md px-1 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
                   <option value="expense" ${c.type === 'expense' ? 'selected' : ''}>支出</option>
@@ -249,14 +267,14 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
 
   container.innerHTML = html;
 
-  // 絵文字入力フィールドへのイベントリスナー（新規追加フォームと編集フォーム両方）
+  // Event listeners for emoji input fields (both new addition and edit forms)
   const emojiInputs = container.querySelectorAll('.emoji-input') as NodeListOf<HTMLInputElement>;
   emojiInputs.forEach(input => {
     input.addEventListener('focus', () => showEmojiPicker(input));
-    // 直接入力を許可するため、keydown等で閉じない
+    // Do not close on keydown to allow direct input
   });
 
-  // 繰り返しフォーム
+  // Recurring form
   const recurringForm = document.getElementById('form-add-recurring') as HTMLFormElement;
   recurringForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -264,13 +282,14 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     await api.addRecurringTask({
       title: data.get('title') as string,
       amount: Number(data.get('amount')),
-      day_of_month: Number(data.get('day_of_month')),
+      start_date: data.get('start_date') as string,
+      frequency: data.get('frequency') as string,
       category_id: data.get('category_id') as string,
     });
     updateSettingsView(container);
   });
 
-  // カテゴリ新規追加
+  // Add new category
   const categoryForm = document.getElementById('form-add-category') as HTMLFormElement;
   categoryForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -284,7 +303,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     updateSettingsView(container);
   });
 
-  // 繰り返し予定削除
+  // Delete recurring task
   const delRecurringBtns = container.querySelectorAll('.btn-delete-recurring');
   delRecurringBtns.forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -295,7 +314,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     });
   });
 
-  // カテゴリ削除
+  // Delete category
   const delCatBtns = container.querySelectorAll('.btn-delete-category');
   delCatBtns.forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -306,7 +325,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     });
   });
 
-  // カテゴリ編集への切り替え
+  // Switch to edit mode
   const editCatBtns = container.querySelectorAll('.btn-edit-category');
   editCatBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -320,7 +339,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     });
   });
 
-  // カテゴリ編集のキャンセル
+  // Cancel category edit
   const cancelEditBtns = container.querySelectorAll('.btn-cancel-edit');
   cancelEditBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -335,7 +354,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     });
   });
 
-  // カテゴリの更新保存
+  // Save category updates
   const editCatForms = container.querySelectorAll('.category-edit-form');
   editCatForms.forEach(form => {
     form.addEventListener('submit', async (e) => {
@@ -359,7 +378,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
     });
   });
 
-  // SortableJSの初期化
+  // Initialize SortableJS
   const initSortable = (selector: string) => {
     const el = container.querySelector(selector) as HTMLElement;
     if (el) {
@@ -375,7 +394,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
           }));
           try {
             await api.updateCategoryOrders(updates);
-            // キャッシュを更新してソート済みの状態を維持
+            // Update cache to maintain sorted state
             const cache = api.getCachedCategories();
             updates.forEach(u => {
               const c = cache.find(cat => cat.id === u.id);

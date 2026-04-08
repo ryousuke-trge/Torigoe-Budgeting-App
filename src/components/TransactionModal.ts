@@ -4,9 +4,16 @@ import { formatDate } from '../utils/date';
 export function createTransactionModal(
   categories: Category[],
   onSubmit: (data: { date: string; amount: number; category_id: string; memo: string }) => Promise<void>,
-  initialDate?: string
+  initialOptions?: {
+    date?: string;
+    amount?: number;
+    category_id?: string;
+    memo?: string;
+    type?: 'income' | 'expense';
+    isEdit?: boolean;
+  }
 ) {
-  // すでにモーダルがあれば削除
+  // Remove existing modal if any
   const existingModal = document.getElementById('transaction-modal');
   if (existingModal) existingModal.remove();
 
@@ -17,7 +24,7 @@ export function createTransactionModal(
     <div id="transaction-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm opacity-0 transition-opacity duration-300">
       <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:pb-6 shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-800">収支を追加</h2>
+          <h2 class="text-xl font-bold text-gray-800">${initialOptions?.isEdit ? '収支を編集' : '収支を追加'}</h2>
           <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -26,47 +33,47 @@ export function createTransactionModal(
         </div>
         
         <form id="transaction-form" class="flex flex-col gap-4">
-          <!-- タイプ選択 -->
+          <!-- Type selection -->
           <div class="flex bg-gray-100 rounded-lg p-1">
             <label class="flex-1 text-center cursor-pointer">
-              <input type="radio" name="type" value="expense" class="peer sr-only" checked />
+              <input type="radio" name="type" value="expense" class="peer sr-only" ${initialOptions?.type === 'income' ? '' : 'checked'} />
               <div class="py-2 rounded-md peer-checked:bg-white peer-checked:shadow text-sm font-medium text-gray-600 peer-checked:text-red-500 transition-all">支出</div>
             </label>
             <label class="flex-1 text-center cursor-pointer">
-              <input type="radio" name="type" value="income" class="peer sr-only" />
+              <input type="radio" name="type" value="income" class="peer sr-only" ${initialOptions?.type === 'income' ? 'checked' : ''} />
               <div class="py-2 rounded-md peer-checked:bg-white peer-checked:shadow text-sm font-medium text-gray-600 peer-checked:text-blue-500 transition-all">収入</div>
             </label>
           </div>
 
-          <!-- 日付 -->
+          <!-- Date -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">日付</label>
-            <input type="date" id="tx-date" name="date" required value="${initialDate || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" id="tx-date" name="date" required value="${initialOptions?.date || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
-          <!-- 金額 -->
+          <!-- Amount -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">金額 (円)</label>
-            <input type="number" id="tx-amount" name="amount" required min="1" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="number" id="tx-amount" name="amount" required min="1" placeholder="0" value="${initialOptions?.amount || ''}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-lg font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
-          <!-- カテゴリ -->
+          <!-- Category -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">カテゴリ</label>
             <select id="tx-category" name="category_id" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pb-2">
-              <optgroup label="支出" id="optgroup-expense">
+              <optgroup label="支出" id="optgroup-expense" style="${initialOptions?.type === 'income' ? 'display: none;' : ''}">
                 ${expenseCategories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}
               </optgroup>
-              <optgroup label="収入" id="optgroup-income" style="display: none;">
+              <optgroup label="収入" id="optgroup-income" style="${initialOptions?.type === 'income' ? '' : 'display: none;'}">
                 ${incomeCategories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}
               </optgroup>
             </select>
           </div>
 
-          <!-- メモ -->
+          <!-- Memo -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">メモ</label>
-            <input type="text" id="tx-memo" name="memo" placeholder="任意" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="tx-memo" name="memo" placeholder="任意" value="${initialOptions?.memo || ''}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <button type="submit" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">
@@ -89,7 +96,19 @@ export function createTransactionModal(
   const optExp = document.getElementById('optgroup-expense')!;
   const optInc = document.getElementById('optgroup-income')!;
 
-  // アニメーション表示
+  // Set initial category
+  if (initialOptions?.category_id) {
+    catSelect.value = initialOptions.category_id;
+  } else {
+    // Fallback to default
+    if (initialOptions?.type === 'income' && incomeCategories.length > 0) {
+      catSelect.value = incomeCategories[0].id;
+    } else if (expenseCategories.length > 0) {
+      catSelect.value = expenseCategories[0].id;
+    }
+  }
+
+  // Show animation
   requestAnimationFrame(() => {
     modal.classList.remove('opacity-0');
     inner.classList.remove('translate-y-full');
@@ -98,7 +117,7 @@ export function createTransactionModal(
   const closeModal = () => {
     modal.classList.add('opacity-0');
     inner.classList.add('translate-y-full');
-    setTimeout(() => modal.remove(), 300); // アニメーション終了後に削除
+    setTimeout(() => modal.remove(), 300); // Remove after animation ends
   };
 
   closeBtn.addEventListener('click', closeModal);
@@ -106,14 +125,14 @@ export function createTransactionModal(
     if (e.target === modal) closeModal();
   });
 
-  // タイプ切り替えでカテゴリ絞り込み
+  // Filter categories by type
   typeRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
       const val = (e.target as HTMLInputElement).value;
       if (val === 'income') {
         optExp.style.display = 'none';
         optInc.style.display = '';
-        // 最初の収入カテゴリを選択
+        // Select the first income category
         if (incomeCategories.length > 0) catSelect.value = incomeCategories[0].id;
       } else {
         optExp.style.display = '';
@@ -123,7 +142,7 @@ export function createTransactionModal(
     });
   });
 
-  // サブミット処理
+  // Submit handler
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = new FormData(form);
@@ -136,7 +155,7 @@ export function createTransactionModal(
     if (!date || !amount || !category_id) return;
 
     try {
-      // 送信ボタンをローディング状態にするなど適宜
+      // Set submit button to loading state, etc.
       await onSubmit({ date, amount, category_id, memo });
       closeModal();
     } catch (e) {

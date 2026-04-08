@@ -1,7 +1,7 @@
 export interface Category {
   id: string;
   name: string;
-  icon: string; // 絵文字
+  icon: string; // Emoji
   type: 'income' | 'expense';
   sort_order?: number;
   created_at?: string;
@@ -25,7 +25,9 @@ export interface RecurringTask {
   title: string;
   amount: number;
   category_id: string;
-  day_of_month: number; // 31の場合は月末扱いとするなどのルールを適用
+  day_of_month?: number; // Keep for migration
+  start_date: string; // YYYY-MM-DD
+  frequency: string; // 'daily', 'weekly', 'monthly', etc.
   created_at?: string;
 }
 

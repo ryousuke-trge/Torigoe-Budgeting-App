@@ -11,7 +11,7 @@ let categories: Category[] = [];
 let selectedDateStr: string = formatDate(new Date());
 
 export async function renderHome(container: HTMLElement) {
-  // まずキャッシュを使って即座に描画
+  // Render instantly using cache first
   categories = api.getCachedCategories();
   const hasCache = categories.length > 0;
   
@@ -21,7 +21,7 @@ export async function renderHome(container: HTMLElement) {
     container.innerHTML = `<div class="flex items-center justify-center h-full"><div class="text-gray-400">読み込み中...</div></div>`;
   }
 
-  // 裏で最新データを取得し再描画
+  // Fetch latest data in background and re-render
   try {
     categories = await api.getCategories();
     await updateHomeView(container, false);
@@ -34,7 +34,7 @@ export async function renderHome(container: HTMLElement) {
 }
 
 async function updateHomeView(container: HTMLElement, useCache: boolean = false) {
-  // 月初と月末の日付をYYYY-MM-DDで求める
+  // Get first and last day of month in YYYY-MM-DD format
   const startDate = new Date(currentYear, currentMonth, 1);
   const endDate = new Date(currentYear, currentMonth + 1, 0);
 
@@ -43,7 +43,7 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
 
   const txs = useCache ? api.getCachedTransactions(startStr, endStr) : await api.getTransactions(startStr, endStr);
 
-  // 日別集計と月間サマリー
+  // Daily aggregation and monthly summary
   const summaryByDate: Record<string, { income: number; expense: number }> = {};
   let totalIncome = 0;
   let totalExpense = 0;
@@ -51,11 +51,11 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
   for (const tx of txs) {
     const isIncome = tx.categories?.type === 'income';
     
-    // 月間集計
+    // Monthly aggregation
     if (isIncome) totalIncome += tx.amount;
     else totalExpense += tx.amount;
 
-    // 日別集計
+    // Daily aggregation
     if (!summaryByDate[tx.date]) summaryByDate[tx.date] = { income: 0, expense: 0 };
     if (isIncome) summaryByDate[tx.date].income += tx.amount;
     else summaryByDate[tx.date].expense += tx.amount;
@@ -66,7 +66,7 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
 
   const html = `
     <div class="h-full flex flex-col pt-4 px-4 relative">
-      <!-- 月切り替えヘッダー -->
+      <!-- Month navigation header -->
       <div class="flex items-center justify-between mb-4">
         <button id="btn-prev-month" class="p-2 rounded-full hover:bg-gray-100 text-gray-500">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -77,7 +77,7 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
         </button>
       </div>
 
-      <!-- 月間サマリー -->
+      <!-- Monthly summary -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-2 flex justify-between items-center">
         <div class="flex-1 text-center">
           <div class="text-xs text-gray-400 font-medium mb-1">収入</div>
@@ -95,13 +95,13 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
         </div>
       </div>
 
-      <!-- カレンダーエリア -->
+      <!-- Calendar area -->
       <div id="calendar-container"></div>
       
-      <!-- 日別詳細リストエリア -->
+      <!-- Daily details list area -->
       <div id="daily-transactions-container" class="pb-[calc(7.5rem+env(safe-area-inset-bottom))]"></div>
       
-      <!-- フローティングアクションボタン (FAB) -->
+      <!-- Floating Action Button (FAB) -->
       <div class="fixed bottom-[calc(8.5rem+env(safe-area-inset-bottom))] w-full max-w-md left-1/2 -translate-x-1/2 pointer-events-none flex justify-end px-4 sm:px-6 z-10">
         <button id="btn-add-tx" class="pointer-events-auto w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 transform transition-all flex items-center justify-center focus:outline-none shrink-0">
           <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
@@ -112,35 +112,58 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
 
   container.innerHTML = html;
 
-  // カレンダー描画
+  // Render calendar
   const calContainer = document.getElementById('calendar-container');
   if (calContainer) {
     renderCalendar(calContainer, currentYear, currentMonth, summaryByDate, selectedDateStr);
 
-    // カレンダーの日付クリックイベント
+    // Calendar date click event
     calContainer.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest('[data-date]');
       if (target) {
         const dateStr = target.getAttribute('data-date');
         if (dateStr) {
           selectedDateStr = dateStr;
-          updateHomeView(container); // 日付を選択して再描画
+          updateHomeView(container); // Re-render with selected date
         }
       }
     });
   }
 
-  // リスト描画
+  // Render list
   const listContainer = document.getElementById('daily-transactions-container');
   if (listContainer) {
     const dailyTxs = txs.filter(tx => tx.date === selectedDateStr);
-    renderDailyTransactionsList(listContainer, selectedDateStr, dailyTxs, async (id) => {
-      await api.deleteTransaction(id);
-      await updateHomeView(container);
-    });
+    renderDailyTransactionsList(
+      listContainer, 
+      selectedDateStr, 
+      dailyTxs, 
+      async (id) => {
+        await api.deleteTransaction(id);
+        await updateHomeView(container);
+      },
+      (tx) => {
+        createTransactionModal(categories, async (data) => {
+          await api.updateTransaction(tx.id, {
+            date: data.date,
+            amount: data.amount,
+            category_id: data.category_id,
+            memo: data.memo
+          });
+          await updateHomeView(container);
+        }, {
+          date: tx.date,
+          amount: tx.amount,
+          category_id: tx.category_id,
+          memo: tx.memo,
+          type: tx.categories?.type,
+          isEdit: true
+        });
+      }
+    );
   }
 
-  // イベントリスナー登録
+  // Register event listeners
   document.getElementById('btn-prev-month')?.addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) {
@@ -161,15 +184,15 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
 
   document.getElementById('btn-add-tx')?.addEventListener('click', () => {
     createTransactionModal(categories, async (data) => {
-      // データの保存
+      // Save data
       await api.addTransaction({
         date: data.date,
         amount: data.amount,
         category_id: data.category_id,
         memo: data.memo
       });
-      // 保存成功後、再描画
+      // Re-render after successful save
       await updateHomeView(container);
-    }, selectedDateStr);
+    }, { date: selectedDateStr });
   });
 }

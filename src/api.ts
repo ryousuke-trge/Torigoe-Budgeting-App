@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import type { Category, Transaction, RecurringTask, TransactionWithCategory, RecurringTaskWithCategory } from './types';
 
 export const api = {
-  // --- キャッシュヘルパー ---
+  // --- Cache Helpers ---
   getCachedCategories(): Category[] {
     try { return JSON.parse(localStorage.getItem('cache_categories') || '[]'); } catch { return []; }
   },
@@ -16,7 +16,7 @@ export const api = {
     try { return JSON.parse(localStorage.getItem('cache_recurring') || '[]'); } catch { return []; }
   },
 
-  // --- カテゴリ ---
+  // --- Categories ---
   async getCategories() {
     const { data, error } = await supabase
       .from('categories')
@@ -37,7 +37,7 @@ export const api = {
     return data as Category;
   },
   async updateCategoryOrders(updates: { id: string; sort_order: number }[]) {
-    // 複数件のupdateを実行
+    // Execute multiple updates
     const promises = updates.map(u => supabase.from('categories').update({ sort_order: u.sort_order }).eq('id', u.id));
     const results = await Promise.all(promises);
     for (const res of results) {
@@ -49,7 +49,7 @@ export const api = {
     if (error) throw error;
   },
 
-  // --- 取引 ---
+  // --- Transactions ---
   async getTransactions(startDate: string, endDate: string) {
     const { data, error } = await supabase
       .from('transactions')
@@ -59,9 +59,9 @@ export const api = {
       .order('date', { ascending: true });
     if (error) throw error;
 
-    // 取得した取引データをキャッシュに保存（既存データとマージ、またはこの範囲を置換）
-    // 注意: シンプルな軽量アプリなので、最新の取得ブロックを保存するかマージします。
-    // データが蓄積されるようにマージを実施します。
+    // Save fetched transaction data to cache (merge with existing data or replace this range)
+    // Note: As a simple lightweight app, we save or merge the latest fetched block.
+    // Merge to accumulate data.
     try {
       const existing: TransactionWithCategory[] = JSON.parse(localStorage.getItem('cache_transactions') || '[]');
       const others = existing.filter(t => t.date < startDate || t.date > endDate);
@@ -78,12 +78,17 @@ export const api = {
     if (error) throw error;
     return data as Transaction;
   },
+  async updateTransaction(id: string, updates: Partial<Omit<Transaction, 'id' | 'created_at'>>) {
+    const { data, error } = await supabase.from('transactions').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data as Transaction;
+  },
   async deleteTransaction(id: string) {
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) throw error;
   },
 
-  // --- 定期タスク ---
+  // --- Recurring Tasks ---
   async getRecurringTasks() {
     const { data, error } = await supabase.from('recurring').select('*, categories(*)');
     if (error) throw error;

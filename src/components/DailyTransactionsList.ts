@@ -4,7 +4,8 @@ export function renderDailyTransactionsList(
   container: HTMLElement,
   dateStr: string,
   transactions: TransactionWithCategory[],
-  onDelete: (id: string) => Promise<void>
+  onDelete: (id: string) => Promise<void>,
+  onEdit?: (tx: TransactionWithCategory) => void
 ) {
   const [y, m, d] = dateStr.split('-');
   const displayDate = `${y}年${Number(m)}月${Number(d)}日`;
@@ -38,7 +39,7 @@ export function renderDailyTransactionsList(
     for (const tx of transactions) {
       const isIncome = tx.categories?.type === 'income';
       html += `
-        <li class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
+        <li class="dtl-item flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors" data-id="${tx.id}">
           <div class="flex items-center gap-3 overflow-hidden">
             <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-white shadow-sm border border-gray-100">
               ${tx.categories?.icon || '🏷️'}
@@ -81,6 +82,20 @@ export function renderDailyTransactionsList(
           btn.innerHTML = originalHtml;
           btn.removeAttribute('disabled');
         }
+      }
+    });
+  });
+
+  const items = container.querySelectorAll('.dtl-item');
+  items.forEach(item => {
+    item.addEventListener('click', (e) => {
+      // Do not trigger when delete button is clicked
+      if ((e.target as HTMLElement).closest('.dtl-delete-btn')) return;
+      
+      const id = item.getAttribute('data-id');
+      const tx = transactions.find(t => t.id === id);
+      if (tx && onEdit) {
+        onEdit(tx);
       }
     });
   });
