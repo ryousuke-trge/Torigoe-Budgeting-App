@@ -103,7 +103,7 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
   const incomeCategories = categories.filter(c => c.type === 'income');
 
   const html = `
-    <div class="h-full flex flex-col pt-8 px-4 pb-6 overflow-y-auto">
+    <div class="h-full flex flex-col pt-8 px-4 pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto">
       <h1 class="text-2xl font-bold text-gray-800 mb-6">設定</h1>
 
       <!-- 繰り返し予定設定 -->

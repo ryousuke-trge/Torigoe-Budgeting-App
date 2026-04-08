@@ -15,7 +15,7 @@ export function createTransactionModal(
 
   const modalHtml = `
     <div id="transaction-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-      <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
+      <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:pb-6 shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-gray-800">収支を追加</h2>
           <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 focus:outline-none">

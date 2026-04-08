@@ -93,7 +93,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   const incomeItems = items.filter(i => i.type === 'income');
 
   const html = `
-    <div class="h-full flex flex-col pt-4 px-4 pb-6">
+    <div class="h-full flex flex-col pt-4 px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
       <div class="flex items-center justify-between mb-4">
         <button id="st-prev-month" class="p-2 rounded-full hover:bg-gray-100 text-gray-500">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
