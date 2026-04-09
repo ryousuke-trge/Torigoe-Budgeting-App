@@ -21,8 +21,8 @@ export function createTransactionModal(
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
   const modalHtml = `
-    <div id="transaction-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-      <div class="bg-white w-full sm:w-96 rounded-t-2xl sm:rounded-2xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:pb-6 shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300">
+    <div id="transaction-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm opacity-0 transition-opacity duration-300 p-4">
+      <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-gray-800">${initialOptions?.isEdit ? '収支を編集' : '収支を追加'}</h2>
           <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -48,7 +48,7 @@ export function createTransactionModal(
           <!-- Date -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">日付</label>
-            <input type="date" id="tx-date" name="date" required value="${initialOptions?.date || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" id="tx-date" name="date" required value="${initialOptions?.date || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <!-- Amount -->
@@ -60,7 +60,7 @@ export function createTransactionModal(
           <!-- Category -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">カテゴリ</label>
-            <select id="tx-category" name="category_id" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pb-2">
+            <select id="tx-category" name="category_id" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pb-2">
               <optgroup label="支出" id="optgroup-expense" style="${initialOptions?.type === 'income' ? 'display: none;' : ''}">
                 ${expenseCategories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}
               </optgroup>
@@ -73,7 +73,7 @@ export function createTransactionModal(
           <!-- Memo -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">メモ</label>
-            <input type="text" id="tx-memo" name="memo" placeholder="任意" value="${initialOptions?.memo || ''}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" id="tx-memo" name="memo" placeholder="任意" value="${initialOptions?.memo || ''}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <button type="submit" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">
@@ -111,12 +111,12 @@ export function createTransactionModal(
   // Show animation
   requestAnimationFrame(() => {
     modal.classList.remove('opacity-0');
-    inner.classList.remove('translate-y-full');
+    inner.classList.remove('scale-95', 'opacity-0');
   });
 
   const closeModal = () => {
     modal.classList.add('opacity-0');
-    inner.classList.add('translate-y-full');
+    inner.classList.add('scale-95', 'opacity-0');
     setTimeout(() => modal.remove(), 300); // Remove after animation ends
   };
 
