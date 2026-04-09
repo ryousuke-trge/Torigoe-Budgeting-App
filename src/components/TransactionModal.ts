@@ -48,7 +48,7 @@ export function createTransactionModal(
           <!-- Date -->
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1">日付</label>
-            <input type="date" id="tx-date" name="date" required value="${initialOptions?.date || formatDate(new Date())}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 h-12" />
+            <input type="date" id="tx-date" name="date" required value="${initialOptions?.date || formatDate(new Date())}" class="w-full max-w-full min-w-0 appearance-none bg-gray-50 border border-gray-200 rounded-lg px-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 h-12 box-border" />
           </div>
 
           <!-- Amount -->
