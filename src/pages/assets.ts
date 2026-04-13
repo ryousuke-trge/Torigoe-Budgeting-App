@@ -18,37 +18,84 @@ export async function renderAssets(container: HTMLElement) {
       api.getProfiles()
     ]);
 
-    // Check if logged in user has an asset, if not add it to allow insertion
     if (currentUserEmail && !allAssets.some(a => a.author_name === currentUserEmail)) {
         allAssets.push({ id: '', bank: 0, cashless: 0, cash: 0, author_name: currentUserEmail });
     }
 
     const render = () => {
-      let html = `<div class="p-4 bg-gray-50 min-h-full pb-24 relative">`;
-      html += `<h1 class="text-2xl font-bold text-gray-800 mb-6 px-2">資産管理</h1>`;
+      let totalAssets = 0;
+      let totalLiabilities = 0;
+
+      allAssets.forEach(asset => {
+          const amounts = [asset.bank || 0, asset.cashless || 0, asset.cash || 0];
+          amounts.forEach(amt => {
+              if (amt >= 0) totalAssets += amt;
+              else totalLiabilities += amt;
+          });
+      });
+
+      const netAssets = totalAssets + totalLiabilities;
+
+      let html = `<div class="p-6 bg-[#fafafa] min-h-full pb-28 relative font-sans">`;
+      
+      // Top Header
+      html += `
+        <div class="flex justify-between items-center mb-6 pt-2">
+          <div class="text-gray-500 font-medium text-sm flex items-center gap-2 cursor-pointer">
+            今日まで 
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+          <div class="text-gray-400 text-sm flex items-center gap-1.5 cursor-pointer relative">
+            <div class="absolute -top-3.5 -right-3 text-[#fbbd23]">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.36 6.26L21 9.27l-4.5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88L3 9.27l6.64-1.01L12 2z"/></svg>
+            </div>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            推移
+          </div>
+        </div>
+      `;
+
+      // Main Card
+      html += `
+        <div class="bg-gradient-to-br from-[#8d8d8d] to-[#6d6d6d] rounded-[24px] p-6 text-white shadow-md mb-8 relative overflow-hidden h-44 flex flex-col justify-center">
+          <div class="absolute -right-16 -top-16 w-56 h-56 bg-white opacity-[0.04] rounded-full"></div>
+          <div class="absolute right-4 -bottom-16 w-48 h-48 bg-white opacity-[0.04] rounded-full"></div>
+          
+          <div class="text-center mb-6 relative z-10 mt-2">
+            <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">純資産</div>
+            <div class="text-[32px] font-bold tracking-tight">¥ ${netAssets.toLocaleString()}</div>
+          </div>
+          
+          <div class="flex justify-between relative z-10 px-6">
+            <div class="text-center flex-1">
+              <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">総資産</div>
+              <div class="text-[15px] font-bold tracking-wide">¥ ${totalAssets.toLocaleString()}</div>
+            </div>
+            <div class="text-center flex-1">
+              <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">負債</div>
+              <div class="text-[15px] font-bold tracking-wide">¥ ${Math.abs(totalLiabilities).toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+      `;
 
       allAssets.forEach(asset => {
         const profile = profiles.find(p => p.email === asset.author_name);
-        // Display email prefix if profile display_name is not set.
         let defaultName = asset.author_name ? asset.author_name.split('@')[0] : 'ゲスト';
         const displayName = profile?.display_name || defaultName;
-        const userTitle = `${displayName}の資産`;
         const totalAmount = (asset.bank || 0) + (asset.cashless || 0) + (asset.cash || 0);
 
         html += `
           <div class="mb-8">
-            <h2 class="text-xl font-bold text-gray-700 mb-4 px-2 w-full border-b border-gray-200 pb-2">${userTitle}</h2>
-            <!-- 総資産額表示カード -->
-            <div class="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl p-6 text-white shadow-lg mb-4 transform transition-transform hover:scale-[1.02]">
-              <div class="text-yellow-100 text-sm font-medium mb-1">現在の総資産</div>
-              <div class="text-4xl font-bold tracking-tight">¥${totalAmount.toLocaleString()}</div>
+            <div class="flex justify-between items-center mb-3 px-1">
+              <div class="text-gray-400 font-medium text-[13px]">${displayName}</div>
+              <div class="text-gray-600 font-semibold text-[13px] tracking-wide">¥ ${totalAmount.toLocaleString()}</div>
             </div>
 
-            <!-- 各項目リスト -->
-            <div class="space-y-4">
-              ${renderAssetCard(asset.id || '', 'bank', '口座', '🏦', asset.bank, asset.author_name)}
-              ${renderAssetCard(asset.id || '', 'cashless', 'キャッシュレス', '💳', asset.cashless, asset.author_name)}
-              ${renderAssetCard(asset.id || '', 'cash', '現金', '💴', asset.cash, asset.author_name)}
+            <div class="space-y-3">
+              ${renderAssetCard(asset.id || '', 'bank', '口座', '🏦', asset.bank, asset.author_name, displayName)}
+              ${renderAssetCard(asset.id || '', 'cashless', 'クレジットカード', '💳', asset.cashless, asset.author_name, displayName)}
+              ${renderAssetCard(asset.id || '', 'cash', '現金', '💴', asset.cash, asset.author_name, displayName)}
             </div>
           </div>
         `;
@@ -56,18 +103,18 @@ export async function renderAssets(container: HTMLElement) {
 
       html += `</div>`;
 
-      // 編集モーダルオーバーレイ
+      // モーダル
       html += `
-        <div id="edit-asset-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[100] backdrop-blur-sm transition-opacity opacity-0 px-4">
-          <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl transform scale-95 transition-transform duration-300">
-            <h3 class="text-lg font-bold text-gray-800 mb-4" id="edit-modal-title">金額を編集</h3>
-            <input type="number" id="edit-asset-input" class="w-full bg-gray-100 border-none rounded-xl p-4 text-xl font-bold text-gray-800 focus:ring-2 focus:ring-yellow-400 mb-6" placeholder="0">
+        <div id="edit-asset-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[100] backdrop-blur-sm transition-opacity opacity-0 px-4">
+          <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform scale-95 transition-transform duration-300">
+            <h3 class="text-lg font-bold text-gray-800 mb-5 text-center" id="edit-modal-title">金額を編集</h3>
+            <input type="number" id="edit-asset-input" class="w-full bg-[#f4f4f4] border-none rounded-2xl p-4 text-center text-2xl font-bold text-gray-800 focus:ring-2 focus:ring-[#70ca7a] mb-6 outline-none" placeholder="0">
             <input type="hidden" id="edit-asset-type">
             <input type="hidden" id="edit-asset-id">
             <input type="hidden" id="edit-asset-author">
             <div class="flex gap-3">
-              <button id="btn-cancel-edit" class="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 transition-colors">キャンセル</button>
-              <button id="btn-save-edit" class="flex-1 py-3 px-4 bg-yellow-400 text-white font-bold rounded-xl shadow-md shadow-yellow-400/30 hover:bg-yellow-500 transition-colors">保存</button>
+              <button id="btn-cancel-edit" class="flex-1 py-3.5 px-4 bg-gray-100 text-gray-600 font-medium rounded-2xl hover:bg-gray-200 transition-colors">キャンセル</button>
+              <button id="btn-save-edit" class="flex-1 py-3.5 px-4 bg-[#7ddb87] text-white font-bold rounded-2xl shadow-md shadow-[#7ddb87]/30 hover:bg-[#6fc47c] transition-colors">保存</button>
             </div>
           </div>
         </div>
@@ -77,21 +124,25 @@ export async function renderAssets(container: HTMLElement) {
       attachEventListeners();
     };
 
-    const renderAssetCard = (id: string, type: string, name: string, icon: string, amount: number, authorName: string = '') => {
+    const renderAssetCard = (id: string, type: string, subtitle: string, icon: string, amount: number, authorName: string, displayName: string) => {
+      const amountClass = amount < 0 ? "text-red-400" : "text-[#62d278]";
+      
+      let avatarHtml = `
+        <div class="w-10 h-10 bg-[#f4f7f9] text-gray-500 rounded-full flex items-center justify-center text-xl shadow-sm">
+          ${icon}
+        </div>
+      `;
+
       return `
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-shadow">
+        <div data-edit-id="${id}" data-edit-type="${type}" data-edit-name="${subtitle}" data-edit-amount="${amount || 0}" data-edit-author="${authorName}" class="edit-asset-btn bg-white rounded-[20px] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between cursor-pointer active:scale-95 transition-all outline-none select-none">
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-2xl shadow-inner">
-              ${icon}
-            </div>
+            ${avatarHtml}
             <div>
-              <div class="text-sm text-gray-500 font-medium">${name}</div>
-              <div class="text-xl font-bold text-gray-800">¥${(amount || 0).toLocaleString()}</div>
+              <div class="text-gray-700 font-medium text-[15px]">${displayName}</div>
+              <div class="text-gray-400 text-[11px] mt-0.5">${subtitle}</div>
             </div>
           </div>
-          <button data-edit-id="${id}" data-edit-type="${type}" data-edit-name="${name}" data-edit-amount="${amount || 0}" data-edit-author="${authorName}" class="edit-asset-btn p-3 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-xl transition-all active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-          </button>
+          <div class="${amountClass} font-medium tracking-wide">¥ ${(amount || 0).toLocaleString()}</div>
         </div>
       `;
     };
@@ -108,7 +159,7 @@ export async function renderAssets(container: HTMLElement) {
 
       const openModal = (id: string, type: string, name: string, amount: number, authorName: string) => {
         if (!modal || !titleEl || !inputEl || !typeEl || !idEl || !authorEl) return;
-        titleEl.textContent = `${name}の金額を編集`;
+        titleEl.textContent = `${name}の残高`;
         inputEl.value = amount.toString();
         typeEl.value = type;
         idEl.value = id;
@@ -117,12 +168,15 @@ export async function renderAssets(container: HTMLElement) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         
-        void modal.offsetWidth; // trigger reflow
+        void modal.offsetWidth;
         
         modal.classList.remove('opacity-0');
         modal.firstElementChild?.classList.remove('scale-95');
         
-        setTimeout(() => inputEl.focus(), 50);
+        setTimeout(() => {
+          inputEl.focus();
+          inputEl.select();
+        }, 50);
       };
 
       const closeModal = () => {
@@ -138,7 +192,7 @@ export async function renderAssets(container: HTMLElement) {
 
       document.querySelectorAll('.edit-asset-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLButtonElement;
+          const target = e.currentTarget as HTMLDivElement;
           const id = target.getAttribute('data-edit-id') || '';
           const type = target.getAttribute('data-edit-type') || '';
           const name = target.getAttribute('data-edit-name') || '';
@@ -169,19 +223,20 @@ export async function renderAssets(container: HTMLElement) {
         try {
           const updates: any = { [type]: newValue };
           if (!targetId && targetAuthor) {
-            updates.author_name = targetAuthor; // If creating new, specify whose it is
+            updates.author_name = targetAuthor;
           }
 
           const updatedAsset = await api.updateAssets(targetId, updates);
           
-          // Update the localized array
           const idx = allAssets.findIndex(a => targetId ? a.id === targetId : a.author_name === targetAuthor);
           if (idx >= 0) {
             allAssets[idx] = updatedAsset;
+          } else {
+            allAssets.push(updatedAsset);
           }
           
           closeModal();
-          setTimeout(render, 300); // 閉じた後に再描画
+          setTimeout(render, 300);
         } catch (err) {
           console.error(err);
           alert('保存に失敗しました');
