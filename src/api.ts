@@ -180,6 +180,11 @@ export const api = {
   },
 
   // --- Assets ---
+  async getAllAssets() {
+    const { data, error } = await supabase.from('assets').select('*');
+    if (error) throw error;
+    return data as AssetEntry[];
+  },
   async getAssets() {
     const { data: sessionData } = await supabase.auth.getSession();
     const author_name = sessionData.session?.user?.email;
@@ -203,7 +208,8 @@ export const api = {
 
     if (!id) {
        // idがない場合はinsertを試みる
-       const { data, error } = await supabase.from('assets').insert({ ...updates, author_name }).select().single();
+       const finalAuthorName = (updates as any).author_name || author_name;
+       const { data, error } = await supabase.from('assets').insert({ ...updates, author_name: finalAuthorName }).select().single();
        if (error) throw error;
        return data as AssetEntry;
     }
