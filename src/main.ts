@@ -2,6 +2,7 @@ import './style.css';
 import { initCategoriesIfEmpty } from './seed';
 import { renderHome } from './pages/home';
 import { renderStats } from './pages/stats';
+import { renderAssets } from './pages/assets';
 import { renderSettings } from './pages/settings';
 import { renderBottomNav } from './components/BottomNav';
 import '@fontsource/yomogi';
@@ -24,6 +25,9 @@ function handleRoute() {
   switch (hash) {
     case '#/stats':
       renderStats(pageContent);
+      break;
+    case '#/assets':
+      renderAssets(pageContent);
       break;
     case '#/settings':
       renderSettings(pageContent);

@@ -34,3 +34,11 @@ export interface RecurringTask {
 export interface RecurringTaskWithCategory extends RecurringTask {
   categories: Category;
 }
+
+export interface AssetEntry {
+  id: string;
+  bank: number;
+  cashless: number;
+  cash: number;
+  updated_at?: string;
+}

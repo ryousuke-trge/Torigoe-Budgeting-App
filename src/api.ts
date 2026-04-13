@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Category, Transaction, RecurringTask, TransactionWithCategory, RecurringTaskWithCategory } from './types';
+import type { Category, Transaction, RecurringTask, TransactionWithCategory, RecurringTaskWithCategory, AssetEntry } from './types';
 
 export const api = {
   // --- Cache Helpers ---
@@ -103,5 +103,27 @@ export const api = {
   async deleteRecurringTask(id: string) {
     const { error } = await supabase.from('recurring').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  // --- Assets ---
+  async getAssets() {
+    const { data, error } = await supabase.from('assets').select('*').limit(1).maybeSingle();
+    if (error) throw error;
+    // 如果没有数据，返回默认的初始状态（理论上 SQL 已经插入了一条）
+    if (!data) {
+      return { id: '', bank: 0, cashless: 0, cash: 0 } as AssetEntry;
+    }
+    return data as AssetEntry;
+  },
+  async updateAssets(id: string, updates: Partial<Omit<AssetEntry, 'id' | 'updated_at'>>) {
+    if (!id) {
+       // idがない場合はinsertを試みる
+       const { data, error } = await supabase.from('assets').insert(updates).select().single();
+       if (error) throw error;
+       return data as AssetEntry;
+    }
+    const { data, error } = await supabase.from('assets').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data as AssetEntry;
   }
 };
