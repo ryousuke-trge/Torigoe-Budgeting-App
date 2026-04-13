@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Category, Transaction, RecurringTask, TransactionWithCategory, RecurringTaskWithCategory, AssetEntry } from './types';
+import type { Category, Transaction, RecurringTask, TransactionWithCategory, RecurringTaskWithCategory, AssetEntry, Profile } from './types';
 
 export const api = {
   // --- Cache Helpers ---
@@ -14,6 +14,9 @@ export const api = {
   },
   getCachedRecurringTasks(): RecurringTaskWithCategory[] {
     try { return JSON.parse(localStorage.getItem('cache_recurring') || '[]'); } catch { return []; }
+  },
+  getCachedProfiles(): Profile[] {
+    try { return JSON.parse(localStorage.getItem('cache_profiles') || '[]'); } catch { return []; }
   },
 
   // --- Categories ---
@@ -133,11 +136,25 @@ export const api = {
     return data as AssetEntry;
   },
 
+  // --- Profiles ---
+  async getProfiles() {
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) throw error;
+    localStorage.setItem('cache_profiles', JSON.stringify(data));
+    return data as Profile[];
+  },
+  async upsertProfile(email: string, display_name: string) {
+    const { data, error } = await supabase.from('profiles').upsert({ email, display_name }, { onConflict: 'email' }).select().single();
+    if (error) throw error;
+    return data as Profile;
+  },
+
   // --- Auth utils ---
   async logout() {
     await supabase.auth.signOut();
     localStorage.removeItem('cache_categories');
     localStorage.removeItem('cache_transactions');
     localStorage.removeItem('cache_recurring');
+    localStorage.removeItem('cache_profiles');
   }
 };

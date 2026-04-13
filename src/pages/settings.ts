@@ -110,16 +110,21 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
   ]);
   const user = sessionData.session?.user;
 
-  let categories: any[], recurrings: any[];
+  let categories: any[], recurrings: any[], profiles: any[];
   if (useCache) {
     categories = api.getCachedCategories();
     recurrings = api.getCachedRecurringTasks();
+    profiles = api.getCachedProfiles();
   } else {
-    [categories, recurrings] = await Promise.all([
+    [categories, recurrings, profiles] = await Promise.all([
       api.getCategories(),
-      api.getRecurringTasks()
+      api.getRecurringTasks(),
+      api.getProfiles()
     ]);
   }
+
+  const myProfile = profiles?.find((p: any) => p.email === user?.email);
+  const displayName = myProfile?.display_name || '';
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
   const incomeCategories = categories.filter(c => c.type === 'income');
@@ -134,12 +139,19 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 font-bold">
-              ${user?.email?.charAt(0).toUpperCase() || 'U'}
+              ${displayName ? displayName.charAt(0) : (user?.email?.charAt(0).toUpperCase() || 'U')}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-bold text-gray-800 truncate">${user?.email || '未ログイン'}</div>
+              <div class="text-sm font-bold text-gray-800 truncate">${displayName || '表示名未設定'}</div>
+              <div class="text-xs text-gray-500 truncate">${user?.email || '未ログイン'}</div>
             </div>
           </div>
+
+          <form id="form-update-profile" class="flex gap-2">
+            <input type="text" name="display_name" value="${displayName}" placeholder="表示名 (例: 涼介)" required class="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+            <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 rounded-lg transition-colors text-sm whitespace-nowrap">保存</button>
+          </form>
+
           <button id="btn-logout" class="w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold rounded-xl border border-gray-200 transition-colors text-sm">
             ログアウト
           </button>
@@ -296,6 +308,27 @@ async function updateSettingsView(container: HTMLElement, useCache: boolean = fa
   emojiInputs.forEach(input => {
     input.addEventListener('focus', () => showEmojiPicker(input));
     // Do not close on keydown to allow direct input
+  });
+
+  // Update profile
+  const profileForm = document.getElementById('form-update-profile') as HTMLFormElement;
+  profileForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!user?.email) return;
+    const data = new FormData(profileForm);
+    const newName = data.get('display_name') as string;
+    const submitBtn = profileForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '保存中...';
+    try {
+      await api.upsertProfile(user.email, newName);
+      updateSettingsView(container);
+    } catch (err) {
+      console.error(err);
+      alert('表示名の保存に失敗しました。');
+      submitBtn.disabled = false;
+      submitBtn.textContent = '保存';
+    }
   });
 
   // Logout

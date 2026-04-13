@@ -23,7 +23,11 @@ export async function renderHome(container: HTMLElement) {
 
   // Fetch latest data in background and re-render
   try {
-    categories = await api.getCategories();
+    const [cats] = await Promise.all([
+      api.getCategories(),
+      api.getProfiles()
+    ]);
+    categories = cats;
     await updateHomeView(container, false);
   } catch (error) {
     console.error(error);

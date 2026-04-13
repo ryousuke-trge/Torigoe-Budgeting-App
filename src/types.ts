@@ -43,3 +43,8 @@ export interface AssetEntry {
   cash: number;
   updated_at?: string;
 }
+
+export interface Profile {
+  email: string;
+  display_name: string;
+}

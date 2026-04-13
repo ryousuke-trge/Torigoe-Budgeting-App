@@ -1,4 +1,5 @@
 import type { TransactionWithCategory } from '../types';
+import { api } from '../api';
 
 export function renderDailyTransactionsList(
   container: HTMLElement,
@@ -35,9 +36,13 @@ export function renderDailyTransactionsList(
       </div>
     `;
   } else {
+    const profiles = api.getCachedProfiles();
     html += `<ul class="space-y-3">`;
     for (const tx of transactions) {
       const isIncome = tx.categories?.type === 'income';
+      const authorProfile = profiles.find(p => p.email === tx.author_email);
+      const authorName = authorProfile?.display_name || tx.author_email;
+
       html += `
         <li class="dtl-item flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors" data-id="${tx.id}">
           <div class="flex items-center gap-3 overflow-hidden">
@@ -47,7 +52,7 @@ export function renderDailyTransactionsList(
             <div class="truncate">
               <div class="font-bold text-gray-800 text-sm">${tx.categories?.name || '不明なカテゴリ'}</div>
               ${tx.memo ? `<div class="text-xs text-gray-500 truncate mt-0.5">${tx.memo}</div>` : ''}
-              ${tx.author_email ? `<div class="text-[10px] text-gray-400 truncate mt-0.5"><span class="inline-block bg-gray-200 text-gray-500 px-1 py-0.5 rounded mr-1">登録者</span>${tx.author_email}</div>` : ''}
+              ${authorName ? `<div class="text-[10px] text-gray-400 truncate mt-0.5"><span class="inline-block bg-gray-200 text-gray-500 px-1 py-0.5 rounded mr-1">登録者</span>${authorName}</div>` : ''}
             </div>
           </div>
           <div class="flex items-center gap-3 ml-2 flex-shrink-0">
