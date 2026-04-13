@@ -76,13 +76,13 @@ export const api = {
 
     return data as TransactionWithCategory[];
   },
-  async addTransaction(tx: Omit<Transaction, 'id' | 'created_at' | 'author_email'>) {
+  async addTransaction(tx: Omit<Transaction, 'id' | 'created_at' | 'author_name'>) {
     const { data: sessionData } = await supabase.auth.getSession();
-    const author_email = sessionData.session?.user?.email;
+    const author_name = sessionData.session?.user?.email;
 
     const { data, error } = await supabase.from('transactions').insert({
       ...tx,
-      author_email
+      author_name
     }).select().single();
     if (error) throw error;
     return data as Transaction;

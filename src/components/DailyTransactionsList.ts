@@ -40,8 +40,8 @@ export function renderDailyTransactionsList(
     html += `<ul class="space-y-3">`;
     for (const tx of transactions) {
       const isIncome = tx.categories?.type === 'income';
-      const authorProfile = profiles.find(p => p.email === tx.author_email);
-      const authorName = authorProfile?.display_name || tx.author_email;
+      const authorProfile = profiles.find(p => p.email === tx.author_name);
+      const authorName = authorProfile?.display_name || tx.author_name;
 
       html += `
         <li class="dtl-item flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors" data-id="${tx.id}">
