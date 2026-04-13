@@ -69,6 +69,7 @@ export function renderDailyTransactionsList(
   const deleteBtns = container.querySelectorAll('.dtl-delete-btn');
   deleteBtns.forEach(btn => {
     btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const id = (e.currentTarget as HTMLButtonElement).getAttribute('data-id');
       if (id && confirm('この取引を削除してもよろしいですか？')) {
         const originalHtml = btn.innerHTML;
