@@ -91,7 +91,7 @@ export async function renderAssets(container: HTMLElement) {
       });
 
       adjustedAssets.forEach(asset => {
-          const amounts = [asset.bank || 0, asset.cashless || 0, asset.cash || 0];
+          const amounts = [asset.cash || 0];
           amounts.forEach(amt => {
               if (amt >= 0) totalAssets += amt;
               else totalLiabilities += amt;
@@ -116,25 +116,12 @@ export async function renderAssets(container: HTMLElement) {
 
       // Main Card
       html += `
-        <div class="bg-gradient-to-br from-[#8d8d8d] to-[#6d6d6d] rounded-[24px] p-6 text-white shadow-md mb-8 relative overflow-hidden h-44 flex flex-col justify-center">
-          <div class="absolute -right-16 -top-16 w-56 h-56 bg-white opacity-[0.04] rounded-full"></div>
-          <div class="absolute right-4 -bottom-16 w-48 h-48 bg-white opacity-[0.04] rounded-full"></div>
-          
-          <div class="text-center mb-6 relative z-10 mt-2">
-            <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">純資産</div>
-            <div class="text-[32px] font-bold tracking-tight">¥ ${netAssets.toLocaleString()}</div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 mt-2 flex flex-col items-center justify-center">
+          <div class="text-sm text-gray-500 font-medium mb-2 flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg>
+            家族の合計残高
           </div>
-          
-          <div class="flex justify-between relative z-10 px-6">
-            <div class="text-center flex-1">
-              <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">総資産</div>
-              <div class="text-[15px] font-bold tracking-wide">¥ ${totalAssets.toLocaleString()}</div>
-            </div>
-            <div class="text-center flex-1">
-              <div class="text-gray-200 text-[11px] font-medium tracking-wider mb-1">負債</div>
-              <div class="text-[15px] font-bold tracking-wide">¥ ${Math.abs(totalLiabilities).toLocaleString()}</div>
-            </div>
-          </div>
+          <div class="text-[32px] font-bold text-gray-800 tracking-tight">¥ ${netAssets.toLocaleString()}</div>
         </div>
       `;
 
@@ -142,7 +129,7 @@ export async function renderAssets(container: HTMLElement) {
         const profile = profiles.find(p => p.email === asset.author_name);
         let defaultName = asset.author_name ? asset.author_name.split('@')[0] : 'ゲスト';
         const displayName = profile?.display_name || defaultName;
-        const totalAmount = (asset.bank || 0) + (asset.cashless || 0) + (asset.cash || 0);
+        const totalAmount = asset.cash || 0;
 
         html += `
           <div class="mb-8">
@@ -152,8 +139,6 @@ export async function renderAssets(container: HTMLElement) {
             </div>
 
             <div class="space-y-3">
-              ${renderAssetCard(asset.id || '', 'bank', '口座', '🏦', asset.bank || 0, asset.author_name || '', displayName)}
-              ${renderAssetCard(asset.id || '', 'cashless', 'クレジットカード', '💳', asset.cashless || 0, asset.author_name || '', displayName)}
               ${renderAssetCard(asset.id || '', 'cash', '現金', '💴', asset.cash || 0, asset.author_name || '', displayName)}
             </div>
           </div>
