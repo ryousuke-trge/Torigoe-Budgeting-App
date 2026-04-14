@@ -75,7 +75,13 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
         <button id="btn-prev-month" class="p-2 rounded-full hover:bg-gray-100 text-gray-500">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <h1 class="text-xl font-bold text-gray-800">${currentYear}年 ${currentMonth + 1}月</h1>
+        <div class="relative flex items-center justify-center">
+          <input type="month" id="month-picker" class="absolute opacity-0 w-1 h-1 -z-10" style="left: 50%; top: 50%; transform: translate(-50%, -50%);" value="${currentYear}-${String(currentMonth + 1).padStart(2, '0')}" />
+          <h1 id="month-header" class="text-xl font-bold text-gray-800 flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity">
+            ${currentYear}年 ${currentMonth + 1}月
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </h1>
+        </div>
         <button id="btn-next-month" class="p-2 rounded-full hover:bg-gray-100 text-gray-500">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
         </button>
@@ -170,6 +176,36 @@ async function updateHomeView(container: HTMLElement, useCache: boolean = false)
   }
 
   // Register event listeners
+  document.getElementById('month-header')?.addEventListener('click', () => {
+    const picker = document.getElementById('month-picker') as HTMLInputElement;
+    if (picker) {
+      if (typeof picker.showPicker === 'function') {
+        try {
+          picker.showPicker();
+        } catch (e) {
+          console.error('showPicker failed', e);
+          picker.focus();
+          picker.click();
+        }
+      } else {
+        picker.focus();
+        picker.click();
+      }
+    }
+  });
+
+  document.getElementById('month-picker')?.addEventListener('change', (e) => {
+    const val = (e.target as HTMLInputElement).value;
+    if (val) {
+      const parts = val.split('-');
+      if (parts.length === 2) {
+        currentYear = parseInt(parts[0], 10);
+        currentMonth = parseInt(parts[1], 10) - 1;
+        updateHomeView(container);
+      }
+    }
+  });
+
   document.getElementById('btn-prev-month')?.addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) {
