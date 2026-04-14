@@ -13,20 +13,84 @@ export async function renderAssets(container: HTMLElement) {
     const { data: sessionData } = await supabase.auth.getSession();
     const currentUserEmail = sessionData.session?.user?.email;
 
-    let [allAssets, profiles] = await Promise.all([
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = String(now.getMonth() + 1).padStart(2, '0');
+    const todayD = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${todayY}-${todayM}-${todayD}`;
+
+    const endOfThisMonth = new Date(todayY, now.getMonth() + 1, 0);
+    const eomY = endOfThisMonth.getFullYear();
+    const eomM = String(endOfThisMonth.getMonth() + 1).padStart(2, '0');
+    const eomD = String(endOfThisMonth.getDate()).padStart(2, '0');
+    const endOfMonthStr = `${eomY}-${eomM}-${eomD}`;
+
+    let [allAssets, profiles, futureTxs] = await Promise.all([
       api.getAllAssets(),
-      api.getProfiles()
+      api.getProfiles(),
+      api.getTransactions(todayStr, '2099-12-31')
     ]);
+
+    allAssets = allAssets.filter(asset => {
+      const isCurrentUser = asset.author_name === currentUserEmail;
+      const isRegisteredProfile = profiles.some(p => p.email === asset.author_name);
+      return isCurrentUser || isRegisteredProfile;
+    });
+
+    const futureDeltas = new Map<string, { bank: number, cashless: number, cash: number }>();
+    const monthEndDeltas = new Map<string, { bank: number, cashless: number, cash: number }>();
+
+    futureTxs.forEach(tx => {
+      if (!tx.asset_type) return;
+      const author = tx.author_name || '';
+      
+      if (!futureDeltas.has(author)) futureDeltas.set(author, { bank: 0, cashless: 0, cash: 0 });
+      if (!monthEndDeltas.has(author)) monthEndDeltas.set(author, { bank: 0, cashless: 0, cash: 0 });
+      
+      const isIncome = tx.categories?.type === 'income';
+      const amt = isIncome ? tx.amount : -tx.amount;
+      const key = tx.asset_type as 'bank' | 'cashless' | 'cash';
+      
+      if (tx.date > todayStr) {
+        futureDeltas.get(author)![key] += amt;
+      }
+      if (tx.date > endOfMonthStr) {
+        monthEndDeltas.get(author)![key] += amt;
+      }
+    });
 
     if (currentUserEmail && !allAssets.some(a => a.author_name === currentUserEmail)) {
         allAssets.push({ id: '', bank: 0, cashless: 0, cash: 0, author_name: currentUserEmail });
     }
 
+    let currentPeriod: 'today' | 'monthend' = 'today';
+
     const render = () => {
       let totalAssets = 0;
       let totalLiabilities = 0;
 
-      allAssets.forEach(asset => {
+      const adjustedAssets = allAssets.map(asset => {
+        const author = asset.author_name || '';
+        let bank = asset.bank || 0;
+        let cashless = asset.cashless || 0;
+        let cash = asset.cash || 0;
+        
+        if (currentPeriod === 'today') {
+          const fd = futureDeltas.get(author) || { bank: 0, cashless: 0, cash: 0 };
+          bank -= fd.bank;
+          cashless -= fd.cashless;
+          cash -= fd.cash;
+        } else if (currentPeriod === 'monthend') {
+          const md = monthEndDeltas.get(author) || { bank: 0, cashless: 0, cash: 0 };
+          bank -= md.bank;
+          cashless -= md.cashless;
+          cash -= md.cash;
+        }
+
+        return { ...asset, bank, cashless, cash };
+      });
+
+      adjustedAssets.forEach(asset => {
           const amounts = [asset.bank || 0, asset.cashless || 0, asset.cash || 0];
           amounts.forEach(amt => {
               if (amt >= 0) totalAssets += amt;
@@ -40,17 +104,12 @@ export async function renderAssets(container: HTMLElement) {
       
       // Top Header
       html += `
-        <div class="flex justify-between items-center mb-6 pt-2">
-          <div class="text-gray-500 font-medium text-sm flex items-center gap-2 cursor-pointer">
-            今日まで 
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        <div class="flex items-center gap-6 mb-6 pt-2">
+          <div id="tab-today" class="text-sm font-medium cursor-pointer transition-colors ${currentPeriod === 'today' ? 'text-gray-800 border-b-2 border-[#7ddb87] pb-1' : 'text-gray-400 pb-1'}">
+            今日まで
           </div>
-          <div class="text-gray-400 text-sm flex items-center gap-1.5 cursor-pointer relative">
-            <div class="absolute -top-3.5 -right-3 text-[#fbbd23]">
-               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.36 6.26L21 9.27l-4.5 4.87 1.18 6.88L12 17.77l-5.68 3.25 1.18-6.88L3 9.27l6.64-1.01L12 2z"/></svg>
-            </div>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-            推移
+          <div id="tab-monthend" class="text-sm font-medium cursor-pointer transition-colors ${currentPeriod === 'monthend' ? 'text-gray-800 border-b-2 border-[#7ddb87] pb-1' : 'text-gray-400 pb-1'}">
+            今月末まで
           </div>
         </div>
       `;
@@ -79,7 +138,7 @@ export async function renderAssets(container: HTMLElement) {
         </div>
       `;
 
-      allAssets.forEach(asset => {
+      adjustedAssets.forEach(asset => {
         const profile = profiles.find(p => p.email === asset.author_name);
         let defaultName = asset.author_name ? asset.author_name.split('@')[0] : 'ゲスト';
         const displayName = profile?.display_name || defaultName;
@@ -153,6 +212,23 @@ export async function renderAssets(container: HTMLElement) {
     };
 
     const attachEventListeners = () => {
+      const tabToday = document.getElementById('tab-today');
+      const tabMonthEnd = document.getElementById('tab-monthend');
+
+      tabToday?.addEventListener('click', () => {
+        if (currentPeriod !== 'today') {
+          currentPeriod = 'today';
+          render();
+        }
+      });
+
+      tabMonthEnd?.addEventListener('click', () => {
+        if (currentPeriod !== 'monthend') {
+          currentPeriod = 'monthend';
+          render();
+        }
+      });
+
       const modal = document.getElementById('edit-asset-modal');
       const titleEl = document.getElementById('edit-modal-title');
       const inputEl = document.getElementById('edit-asset-input') as HTMLInputElement;
@@ -220,13 +296,22 @@ export async function renderAssets(container: HTMLElement) {
         const targetId = idEl.value;
         const targetAuthor = authorEl.value;
         
+        let adjustedValue = newValue;
+        if (currentPeriod === 'today') {
+          const fd = futureDeltas.get(targetAuthor) || { bank: 0, cashless: 0, cash: 0 };
+          adjustedValue += fd[type];
+        } else if (currentPeriod === 'monthend') {
+          const md = monthEndDeltas.get(targetAuthor) || { bank: 0, cashless: 0, cash: 0 };
+          adjustedValue += md[type];
+        }
+
         const originalText = btnSave.textContent;
         btnSave.textContent = '保存中...';
         btnSave.setAttribute('disabled', 'true');
         btnSave.classList.add('opacity-50', 'cursor-not-allowed');
 
         try {
-          const updates: any = { [type]: newValue };
+          const updates: any = { [type]: adjustedValue };
           if (!targetId && targetAuthor) {
             updates.author_name = targetAuthor;
           }

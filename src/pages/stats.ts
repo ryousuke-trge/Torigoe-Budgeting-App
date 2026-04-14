@@ -2,6 +2,7 @@ import { api } from '../api';
 import { formatDate } from '../utils/date';
 import type { TransactionWithCategory } from '../types';
 import { showMonthPicker } from '../components/MonthPicker';
+import { showCategoryTransactionsModal } from '../components/CategoryTransactionsModal';
 
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); // 0-11
@@ -96,7 +97,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   const formatDiff = (d: number) => d > 0 ? `+${d.toLocaleString()}` : d.toLocaleString();
 
   // Convert to array for ranking
-  const items = Object.values(curr.catMap).sort((a, b) => b.amount - a.amount);
+  const items = Object.entries(curr.catMap).map(([id, val]) => ({ id, ...val })).sort((a, b) => b.amount - a.amount);
   const expenseItems = items.filter(i => i.type === 'expense');
   const incomeItems = items.filter(i => i.type === 'income');
 
@@ -123,9 +124,9 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
-          <input type="text" id="search-input" value="${searchQuery}" placeholder="カテゴリ名で検索..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-sm">
+          <input type="text" id="search-input" value="${searchQuery}" placeholder="カテゴリ名で検索..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-sm">
         </div>
-        <select id="user-filter" class="w-32 px-3 py-2 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-sm appearance-none">
+        <select id="user-filter" class="w-32 px-3 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-sm appearance-none">
           <option value="all" ${selectedUser === 'all' ? 'selected' : ''}>全体</option>
           ${profiles.map(p => `<option value="${p.email}" ${selectedUser === p.email ? 'selected' : ''}>${p.display_name || p.email}</option>`).join('')}
         </select>
@@ -151,7 +152,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
         <h2 class="text-sm font-bold text-gray-600 mb-3 ml-1">支出ランキング</h2>
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
           ${expenseItems.length === 0 ? '<div class="p-4 text-center text-sm text-gray-400">データがありません</div>' : expenseItems.map((item, idx) => `
-            <div class="flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+            <div class="stat-category-row flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer" data-id="${item.id}">
               <div class="flex items-center gap-3">
                 <div class="w-6 text-center text-gray-400 text-sm font-bold">${idx + 1}</div>
                 <div class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-xl">${item.icon}</div>
@@ -168,7 +169,7 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
         <h2 class="text-sm font-bold text-gray-600 mb-3 ml-1">収入ランキング</h2>
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
           ${incomeItems.length === 0 ? '<div class="p-4 text-center text-sm text-gray-400">データがありません</div>' : incomeItems.map((item, idx) => `
-            <div class="flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+            <div class="stat-category-row flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer" data-id="${item.id}">
               <div class="flex items-center gap-3">
                 <div class="w-6 text-center text-gray-400 text-sm font-bold">${idx + 1}</div>
                 <div class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-xl">${item.icon}</div>
@@ -232,5 +233,26 @@ async function updateStatsView(container: HTMLElement, useCache: boolean = false
   userFilter?.addEventListener('change', (e) => {
     selectedUser = (e.target as HTMLSelectElement).value;
     updateStatsView(container, false, profiles);
+  });
+
+  const rows = container.querySelectorAll('.stat-category-row');
+  rows.forEach(row => {
+    row.addEventListener('click', () => {
+      const catId = row.getAttribute('data-id');
+      if (!catId) return;
+
+      const itemList = curr.catMap[catId];
+      if (!itemList) return;
+
+      const filteredTxs = currentTxs.filter(tx => {
+        if (selectedUser !== 'all' && tx.author_name !== selectedUser) return false;
+        if (searchQuery && (!tx.categories || !tx.categories.name.includes(searchQuery))) return false;
+        return tx.category_id === catId;
+      });
+
+      filteredTxs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      showCategoryTransactionsModal(itemList.name, itemList.icon, filteredTxs);
+    });
   });
 }
