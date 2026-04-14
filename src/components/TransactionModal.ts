@@ -77,24 +77,6 @@ export function createTransactionModal(
             <input type="hidden" id="tx-date" name="date" value="${initialOptions?.date || formatDate(new Date())}" />
           </div>
 
-          <!-- Asset -->
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">対象の資産</label>
-            <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
-              <label class="flex-1 text-center cursor-pointer">
-                <input type="radio" name="asset_type" value="cash" class="peer sr-only" ${initialOptions?.asset_type === 'cash' || !initialOptions?.asset_type ? 'checked' : ''} />
-                <div class="py-2 rounded-md peer-checked:bg-white peer-checked:shadow text-sm font-medium text-gray-600 peer-checked:text-blue-600 transition-all">現金</div>
-              </label>
-              <label class="flex-1 text-center cursor-pointer">
-                <input type="radio" name="asset_type" value="bank" class="peer sr-only" ${initialOptions?.asset_type === 'bank' ? 'checked' : ''} />
-                <div class="py-2 rounded-md peer-checked:bg-white peer-checked:shadow text-sm font-medium text-gray-600 peer-checked:text-blue-600 transition-all">口座</div>
-              </label>
-              <label class="flex-1 text-center cursor-pointer">
-                <input type="radio" name="asset_type" value="cashless" class="peer sr-only" ${initialOptions?.asset_type === 'cashless' ? 'checked' : ''} />
-                <div class="py-2 rounded-md peer-checked:bg-white peer-checked:shadow text-sm font-medium text-gray-600 peer-checked:text-blue-600 transition-all">電子/カード</div>
-              </label>
-            </div>
-          </div>
 
           <!-- Amount -->
           <div>
