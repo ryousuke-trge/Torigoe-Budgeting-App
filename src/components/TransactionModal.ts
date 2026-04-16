@@ -212,17 +212,32 @@ export function createTransactionModal(
     if (target === modal || target.id === 'transaction-modal-backdrop') closeModal();
   });
 
-  // 金額フォーカス時にスクロール位置を調整する（初回フォーカス時にキーボードで隠れないようにするため）
+  // 金額フォーカス時にスクロール位置を調整する
   const txAmount = document.getElementById('tx-amount');
   const txMemo = document.getElementById('tx-memo');
+  const submitBtn = form.querySelector('button[type="submit"]');
   
+  let isFirstAmountFocus = true;
+
   const scrollToCenter = (e: Event) => {
     setTimeout(() => {
       (e.target as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 300); // ソフトウェアキーボードが表示されるまで少し待機
   };
 
-  txAmount?.addEventListener('focus', scrollToCenter);
+  txAmount?.addEventListener('focus', (e) => {
+    setTimeout(() => {
+      if (isFirstAmountFocus && submitBtn) {
+        // 初回は保存ボタンまで見えるようにスクロール
+        submitBtn.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        isFirstAmountFocus = false;
+      } else {
+        // 2回目以降は対象を中央へ
+        (e.target as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+  });
+  
   txMemo?.addEventListener('focus', scrollToCenter);
 
   // Filter categories by type
